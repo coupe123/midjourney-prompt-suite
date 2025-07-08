@@ -1057,7 +1057,8 @@ ReactDOM.render(<MidjourneyPromptSuite />, document.getElementById('root'));
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  const PORT = process.env.PORT || 3000;
+console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(\`🎨 Midjourney Prompt Tool Suite ready!\`);
   console.log(\`✨ Features: Enhancement, Moderation, Batch Processing, Quality Scoring, Templates, History\`);
 });
