@@ -406,27 +406,6 @@ app.get('/app.js', (req, res) => {
     '    }\n' +
     '    setIsFixingModeration(false);\n' +
     '  };\n\n' +
-    '  const processBatch = async () => {\n' +
-    '    const validPrompts = batchPrompts.filter(p => p.trim());\n' +
-    '    if (validPrompts.length === 0) return;\n' +
-    '    setIsBatchProcessing(true);\n' +
-    '    try {\n' +
-    '      const response = await fetch("/api/batch/process", {\n' +
-    '        method: "POST",\n' +
-    '        headers: { "Content-Type": "application/json" },\n' +
-    '        body: JSON.stringify({ prompts: validPrompts, settings: { preset: selectedPreset, tier: rewriteTier } })\n' +
-    '      });\n' +
-    '      const data = await response.json();\n' +
-    '      setBatchResults(data.results);\n' +
-    '    } catch (error) {\n' +
-    '      console.error("Batch processing failed:", error);\n' +
-    '    }\n' +
-    '    setIsBatchProcessing(false);\n' +
-    '  };\n\n' +
-    '  const addBatchPrompt = () => setBatchPrompts(prev => [...prev, ""]);\n' +
-    '  const updateBatchPrompt = (index, value) => setBatchPrompts(prev => prev.map((p, i) => i === index ? value : p));\n' +
-    '  const removeBatchPrompt = (index) => setBatchPrompts(prev => prev.filter((_, i) => i !== index));\n' +
-    '  const updateParameter = (param, field, value) => setParameters(prev => ({ ...prev, [param]: { ...prev[param], [field]: value } }));\n' +
     '  const loadTemplate = (template) => { setInputPrompt(template.prompt); setActiveMainTab("enhance"); };\n\n' +
     '  return React.createElement("div", { className: "min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4" },\n' +
     '    React.createElement("div", { className: "max-w-6xl mx-auto" },\n' +
@@ -479,6 +458,24 @@ app.get('/app.js', (req, res) => {
     '            className: "w-full h-32 bg-slate-700/50 border border-slate-600 rounded-2xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none text-sm"\n' +
     '          })\n' +
     '        ),\n' +
+    '        React.createElement("div", { className: "bg-slate-800/50 backdrop-blur-sm rounded-3xl p-6 border border-slate-700/50" },\n' +
+    '          React.createElement("label", { className: "block text-slate-300 text-sm font-medium mb-4" }, "Style Presets"),\n' +
+    '          React.createElement("div", { className: "grid grid-cols-2 lg:grid-cols-3 gap-3" },\n' +
+    '            rewritePresets.map((preset) =>\n' +
+    '              React.createElement("button", {\n' +
+    '                key: preset.id,\n' +
+    '                onClick: () => setSelectedPreset(preset.id),\n' +
+    '                className: "flex items-start gap-3 p-4 rounded-xl text-left transition-all " + (selectedPreset === preset.id ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white" : "bg-slate-700/50 text-slate-300 hover:bg-slate-600/50")\n' +
+    '              },\n' +
+    '                React.createElement("span", { className: "text-xl" }, preset.name.split(" ")[0]),\n' +
+    '                React.createElement("div", { className: "flex-1" },\n' +
+    '                  React.createElement("div", { className: "font-medium text-sm" }, preset.name.substring(2)),\n' +
+    '                  React.createElement("div", { className: "text-xs opacity-75 mt-1" }, preset.description)\n' +
+    '                )\n' +
+    '              )\n' +
+    '            )\n' +
+    '          )\n' +
+    '        ),\n' +
     '        React.createElement("button", {\n' +
     '          onClick: enhancePrompt,\n' +
     '          disabled: !inputPrompt.trim() || isEnhancing,\n' +
@@ -497,20 +494,136 @@ app.get('/app.js', (req, res) => {
     '            React.createElement("div", { className: "flex items-center gap-3" },\n' +
     '              React.createElement("label", { className: "text-slate-300 text-sm font-medium" }, "Enhanced Prompt"),\n' +
     '              qualityScore && React.createElement("span", {\n' +
-    '                className: "px-2 py-1 rounded-lg text-xs font-bold " + (qualityScore >= 80 ? "bg-green-600" : qualityScore >= 60 ? "bg-yellow-600" : "bg-red-600")\n' +
-    '              }, "Quality: " + qualityScore + "%")\n' +
-    '            ),\n' +
-    '            React.createElement("div", { className: "flex gap-2" },\n' +
-    '              React.createElement("button", {\n' +
-    '                onClick: () => setShowModerationError(true),\n' +
-    '                className: "flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium py-2 px-3 rounded-xl transition-colors"\n' +
-    '              }, "⚠️ Fix Moderation"),\n' +
-    '              React.createElement("button", {\n' +
-    '                onClick: () => copyToClipboard(enhancedPrompt, "enhanced"),\n' +
-    '                className: "flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium py-2 px-3 rounded-xl transition-colors"\n' +
-    '              },\n' +
-    '                React.createElement(Copy, { className: "w-3 h-3" }),\n' +
-    '                copySuccess === "enhanced" ? "Copied!" : "Copy"\n' +
-    '              )\n' +
-    '            )\n' +
-    '          ),\
+    '                className: "px-2 py-1 rounded-lg text-xs font-bold " + (qualityScore >= 80 ? "bg-green-600" : qualityScore >= 60 ? "bg-yellow-600" : "bg-red-600")
+              }, "Quality: " + qualityScore + "%")
+            ),
+            React.createElement("div", { className: "flex gap-2" },
+              React.createElement("button", {
+                onClick: () => setShowModerationError(true),
+                className: "flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium py-2 px-3 rounded-xl transition-colors"
+              }, "⚠️ Fix Moderation"),
+              React.createElement("button", {
+                onClick: () => copyToClipboard(enhancedPrompt, "enhanced"),
+                className: "flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium py-2 px-3 rounded-xl transition-colors"
+              },
+                React.createElement(Copy, { className: "w-3 h-3" }),
+                copySuccess === "enhanced" ? "Copied!" : "Copy"
+              )
+            )
+          ),
+          React.createElement("div", { className: "bg-slate-700/50 border border-slate-600 rounded-2xl p-4" },
+            React.createElement("p", { className: "text-white text-sm leading-relaxed" }, enhancedPrompt)
+          )
+        )
+      ),
+      activeMainTab === "templates" && React.createElement("div", { className: "space-y-6" },
+        React.createElement("div", { className: "bg-slate-800/50 backdrop-blur-sm rounded-3xl p-6 border border-slate-700/50" },
+          React.createElement("h3", { className: "text-xl font-bold text-white mb-4 flex items-center gap-2" },
+            React.createElement(Palette, { className: "w-5 h-5" }),
+            "Prompt Templates"
+          ),
+          React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-4" },
+            templates.map((template) =>
+              React.createElement("div", { key: template.id, className: "bg-slate-700/30 rounded-lg p-4" },
+                React.createElement("div", { className: "flex items-center justify-between mb-2" },
+                  React.createElement("h5", { className: "text-white font-medium text-sm" }, template.category),
+                  React.createElement("button", {
+                    onClick: () => loadTemplate(template),
+                    className: "bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium py-1 px-3 rounded-lg transition-all"
+                  }, "Use Template")
+                ),
+                React.createElement("p", { className: "text-slate-300 text-sm" }, template.prompt)
+              )
+            )
+          )
+        )
+      ),
+      showModerationError && React.createElement("div", { className: "fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" },
+        React.createElement("div", { className: "bg-slate-800 rounded-3xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-red-500/30" },
+          React.createElement("div", { className: "flex items-center gap-3 mb-4" },
+            React.createElement("div", { className: "bg-red-500 p-2 rounded-lg" },
+              React.createElement("span", { className: "text-white text-lg" }, "⚠️")
+            ),
+            React.createElement("div", null,
+              React.createElement("h3", { className: "text-red-400 font-medium" }, "Moderation Error Detected"),
+              React.createElement("p", { className: "text-red-300 text-sm" }, "Generate safe alternatives for your prompt")
+            )
+          ),
+          React.createElement("div", { className: "bg-slate-700/50 rounded-2xl p-4 mb-4" },
+            React.createElement("p", { className: "text-slate-300 text-sm mb-2" }, "Original prompt:"),
+            React.createElement("p", { className: "text-white text-sm font-mono bg-slate-800/50 rounded-lg p-3" }, inputPrompt)
+          ),
+          moderationRewrites.length === 0 ? React.createElement("button", {
+            onClick: fixModerationError,
+            disabled: isFixingModeration,
+            className: "w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 disabled:from-slate-600 disabled:to-slate-600 text-white font-medium py-3 px-6 rounded-2xl transition-all flex items-center justify-center gap-2"
+          },
+            isFixingModeration ? [
+              React.createElement(RefreshCw, { key: "icon", className: "w-5 h-5 animate-spin" }),
+              "Generating Safe Alternatives..."
+            ] : "⚠️ Generate Safe Alternatives"
+          ) : React.createElement("div", { className: "space-y-4" },
+            React.createElement("div", { className: "space-y-3" },
+              moderationRewrites.map((rewrite, index) =>
+                React.createElement("div", { key: index, className: "bg-slate-700/30 rounded-2xl p-4 border border-slate-600/50" },
+                  React.createElement("p", { className: "text-white text-sm mb-3" }, rewrite),
+                  React.createElement("div", { className: "flex gap-2" },
+                    React.createElement("button", {
+                      onClick: () => {
+                        setInputPrompt(rewrite);
+                        setShowModerationError(false);
+                        setActiveMainTab("enhance");
+                      },
+                      className: "flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium py-2 px-3 rounded-xl transition-colors"
+                    }, "👍 Use This"),
+                    React.createElement("button", {
+                      onClick: () => copyToClipboard(rewrite, "mod-" + index),
+                      className: "flex items-center gap-1 bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium py-2 px-3 rounded-xl transition-colors"
+                    },
+                      React.createElement(Copy, { className: "w-3 h-3" }),
+                      copySuccess === ("mod-" + index) ? "Copied!" : "Copy"
+                    )
+                  )
+                )
+              )
+            ),
+            React.createElement("div", { className: "flex gap-2 pt-3 border-t border-slate-600/30" },
+              React.createElement("button", {
+                onClick: fixModerationError,
+                className: "flex items-center gap-1 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium py-2 px-4 rounded-xl transition-colors"
+              }, "🔄 Generate More"),
+              React.createElement("button", {
+                onClick: () => setShowModerationError(false),
+                className: "flex items-center gap-1 bg-slate-600 hover:bg-slate-700 text-white text-sm font-medium py-2 px-4 rounded-xl transition-colors"
+              }, "Close")
+            )
+          )
+        )
+      ),
+      React.createElement("div", { className: "text-center mt-8 pb-8" },
+        React.createElement("p", { className: "text-slate-400 text-xs" }, "Midjourney Prompt Tool Suite • Professional AI Enhancement Platform")
+      )
+    )
+  );
+}
+
+ReactDOM.render(React.createElement(MidjourneyPromptSuite), document.getElementById("root"));';
+  
+  res.send(jsCode);
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🎨 Midjourney Prompt Tool Suite ready!`);
+  console.log(`✨ Features: Enhancement, Moderation, Batch Processing, Quality Scoring, Templates, History`);
+});
+
+process.on('SIGTERM', () => {
+  console.log('Shutting down gracefully...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('Shutting down gracefully...');
+  process.exit(0);
+});
