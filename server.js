@@ -274,9 +274,9 @@ app.post('/api/presets', (req, res) => {
   res.json(preset);
 });
 
-// Serve the full-featured React app
+// Serve the main HTML
 app.get('/', (req, res) => {
-  res.send(`<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -295,13 +295,14 @@ app.get('/', (req, res) => {
   <div id="root"></div>
   <script type="text/babel" src="/app.js"></script>
 </body>
-</html>`);
+</html>`;
+  res.send(html);
 });
 
 // Serve the React component
 app.get('/app.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.send(\`
+  const jsCode = `
 const { useState, useEffect, useRef } = React;
 const { 
   Wand2, Copy, Sparkles, RefreshCw, History, Palette, Sliders, Settings, 
@@ -351,6 +352,11 @@ function MidjourneyPromptSuite() {
     fetch('/api/templates')
       .then(res => res.json())
       .then(setTemplates)
+      .catch(console.error);
+      
+    fetch('/api/history')
+      .then(res => res.json())
+      .then(setPromptHistory)
       .catch(console.error);
   }, []);
   
@@ -528,7 +534,7 @@ function MidjourneyPromptSuite() {
           </div>
         </div>
 
-        {/* Tab Content */}
+        {/* ENHANCE TAB */}
         {activeMainTab === 'enhance' && (
           <div className="space-y-6">
             
@@ -878,7 +884,7 @@ function MidjourneyPromptSuite() {
                 <button
                   onClick={() => {
                     if (inputPrompt.trim()) {
-                      const score = Math.floor(Math.random() * 40) + 60; // Demo score
+                      const score = Math.floor(Math.random() * 40) + 60;
                       setQualityScore(score);
                     }
                   }}
@@ -1046,7 +1052,8 @@ function MidjourneyPromptSuite() {
 }
 
 ReactDOM.render(<MidjourneyPromptSuite />, document.getElementById('root'));
-  \`);
+  `;
+  res.send(jsCode);
 });
 
 app.listen(PORT, () => {
